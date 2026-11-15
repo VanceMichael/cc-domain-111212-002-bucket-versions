@@ -87,8 +87,18 @@ class SourceTests(unittest.TestCase):
 
     def test_demo_reaches_source_and_archive(self):
         report = app.demo()
-        self.assertEqual(report['captures'], 1)
-        self.assertEqual(report['requests'], 1)
+        self.assertEqual(report['pages'], 2)
+        self.assertEqual(report['entries'], 4)
+        self.assertFalse(report['truncated'])
+        # 双标记续页 + v2 两次取回（423 后成功）+ v1 一次，共 5 个请求。
+        self.assertEqual(report['requests'], 5)
+        # 删除标记不进当前文件集合；当前文件来自第二页观察。
+        self.assertEqual(report['current_files'], ['cargo/new.csv@new1'])
+        self.assertEqual(report['current_delete_markers'], ['v3'])
+        # 取回状态机：等待 -> 核实；无校验证据的 v1 不能冒充已核实。
+        self.assertEqual(report['v2_first_state'], 'restore-pending')
+        self.assertEqual(report['v2_final_state'], 'verified')
+        self.assertEqual(report['v1_state'], 'received-unverified')
         self.assertTrue(report['same_capture'])
 
 if __name__ == '__main__':
